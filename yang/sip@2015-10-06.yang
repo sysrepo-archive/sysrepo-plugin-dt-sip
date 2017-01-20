@@ -1,0 +1,138 @@
+module sip {
+
+    namespace "urn:opencpe:sip";
+
+    prefix "ocpe-sip";
+
+    organization
+        "Deutsche Telekom AG";
+
+    contact
+        "Landgrabenweg 151
+        53227 Bonn, Germany";
+
+    description
+        "This module defines SIP used in the TeraStream home gateway project.";
+
+    revision "2015-10-06" {
+        description
+            "Version 0.1.0 -- Initial version.";
+    }
+
+   container "extensions" {
+       list ext {
+           key "name";
+
+           leaf "name" {
+               type "string";
+           }
+           leaf "type" {
+               type "string";
+           }
+           leaf "context" {
+               type "string";
+           }
+           leaf "target" {
+               type "string";
+           }
+           leaf "external" {
+               type "string";
+           }
+           leaf "international" {
+               type "string";
+           }
+           leaf "trunk" {
+               type "string";
+           }
+           container rings {
+               leaf-list "ring" {
+                   type "string";
+               }
+           }
+           leaf "codecs" {
+               type "string";
+           }
+           leaf "server" {
+               type "string";
+           }
+       }
+   }
+
+   container "general" {
+       leaf "name" {
+           type "string";
+       }
+       leaf "disabled" {
+           type "string";
+       }
+       leaf "ami" {
+           type "string";
+       }
+       leaf "amihost" {
+           type "string";
+       }
+       leaf "amiport" {
+           type "string";
+       }
+       leaf "amiuser" {
+           type "string";
+       }
+       leaf "amipass" {
+           type "string";
+       }
+   }
+
+   container "trunk" {
+       leaf "name" {
+           type "string";
+       }
+       leaf "type" {
+           type "string";
+       }
+       leaf "username" {
+           type "string";
+       }
+       leaf "nr" {
+           type "string";
+       }
+       leaf "password" {
+           type "string";
+       }
+       leaf "codecs" {
+           type "string";
+       }
+       leaf "server" {
+           type "string";
+       }
+   }
+
+    rpc start {
+        description
+            "Start SIP deamon.";
+    }
+
+    rpc stop {
+        description
+            "Stop SIP deamon.";
+    }
+
+    rpc restart {
+        description
+            "Restart SIP deamon.";
+    }
+
+    rpc reload {
+        description
+            "Reload SIP configuration files (or restart if that fails).";
+    }
+
+    rpc disable {
+        description
+            "Disable SIP deamon autostart.";
+    }
+
+    rpc enable {
+        description
+            "Enable SIP deamon autostart.";
+    }
+}

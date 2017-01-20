@@ -1,0 +1,26 @@
+config ext '1000'
+        option type 'generic'
+        option context 'mspd1'
+        option target 'MSPD/phone0'
+
+config general
+        option disabled '0'
+        option ami '1'
+        option amihost '127.0.0.1'
+        option amiport '5038'
+        option amiuser 'admin'
+        option amipass '***'
+
+config trunk 'terastream'
+        option type 'terastream'
+        option server 'ims.t-com.hr'
+        option username '38521408732'
+        option nr '+38521408732'
+        option password '***'
+        option codecs 'g729,g722,alaw'
+
+config ext '38521408732'
+        option type 'external'
+        option international '1'
+        option trunk 'terastream'
+        list ring '1000'

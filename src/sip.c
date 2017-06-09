@@ -11,13 +11,13 @@
 
 #include "sip.h"
 #include "rpc.h"
+#include "common.h"
 
 #define XPATH_MAX_LEN 100
 #define UCIPATH_MAX_LEN 100
 
-/* name of the uci config file. */
-static const char *config_file = "asterisk";
-static const char *module_name = "sip";
+static const char *CONFIG_FILE = "asterisk";
+static const char *MODULE_NAME = "sip";
 static const size_t n_rpc_method = 6;
 static const struct rpc_method rpc[] = {
   {"start", rpc_start},
@@ -37,9 +37,12 @@ set_value_str(sr_session_ctx_t *sess, char *val_str, char *set_path)
   val.data.string_val = val_str;
 
   int rc = sr_set_item(sess, set_path, &val, SR_EDIT_DEFAULT);
+  SR_CHECK_RET(rc, exit, "set_value_string -> set_item failed %s", sr_strerror(rc));
 
+ exit:
   return rc;
 }
+
 
 /**
  * @brief Submit UCI option.
@@ -59,19 +62,16 @@ submit_to_uci(struct uci_context *ctx, char *str_opt, char *str_val, char *fmt)
 
   sprintf(ucipath, fmt, str_opt, str_val);
 
-  if ((rc = uci_lookup_ptr(ctx, &up, ucipath, true)) != UCI_OK) {
-    fprintf(stderr, "Nothing found on UCI path.\n");
-    goto exit;
-  }
+  rc = uci_lookup_ptr(ctx, &up, ucipath, true);
+  UCI_CHECK_RET(rc, exit, "uci_lookup_ptr fail: %d", rc);
 
-  if ((rc = uci_set(ctx, &up)) != UCI_OK) {
-    fprintf(stderr, "Could not set UCI value [%s] for path [%s].\n", str_val, ucipath);
-    goto exit;
-  }
+  rc = uci_set(ctx, &up);
+  UCI_CHECK_RET(rc, exit, "uci_set fail: %d", rc);
 
  exit:
   return rc;
 }
+
 
 static int
 general_to_uci(struct uci_context *ctx, struct general *g)
@@ -80,37 +80,30 @@ general_to_uci(struct uci_context *ctx, struct general *g)
   char *fmt = "asterisk.@general[0].%s=%s";
 
   rc = submit_to_uci(ctx, "name", g->name, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit name to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "disabled", g->disabled, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit disabled to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "ami", g->ami, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit ami to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "amihost", g->amihost, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit amihost to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "amiport", g->amiport, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit amiport to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "amiuser", g->amiuser, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit amiuser to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "amipass", g->amipass, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit amipass to UCI fail: %d", rc);
 
  exit:
   return rc;
 }
+
 
 static int
 trunk_to_uci(struct uci_context *ctx, struct trunk *t)
@@ -119,33 +112,25 @@ trunk_to_uci(struct uci_context *ctx, struct trunk *t)
   char *fmt = "asterisk.terastream.%s=%s";
 
   rc = submit_to_uci(ctx, "name", t->name, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit name to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "type", t->type, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit type to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "username", t->username, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit username to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "nr", t->nr, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit nr to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "password", t->password, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit password to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "codecs", t->codecs, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit codecs to UCI fail: %d", rc);
+
   rc = submit_to_uci(ctx, "server", t->server, fmt);
-  if (UCI_OK != rc) {
-    goto exit;
-  }
+  UCI_CHECK_RET(rc, exit, "submit server to UCI fail: %d", rc);
 
  exit:
   return rc;
@@ -164,41 +149,31 @@ extensions_to_uci(struct uci_context *ctx, struct list_head *extensions)
     sprintf(fmt_named, fmt, ext->name, "%s", "%s");
 
     rc = submit_to_uci(ctx, "name", ext->name, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit name to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "type", ext->type, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit type to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "context", ext->context, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit context to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "target", ext->target, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit target to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "external", ext->external, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit external  to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "international", ext->international, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit international to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "trunk", ext->trunk, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit trunk to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "codecs", ext->codecs, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit codecs to UCI fail: %d", rc);
+
     rc = submit_to_uci(ctx, "server", ext->server, fmt_named);
-    if (UCI_OK != rc) {
-      goto exit;
-    }
+    UCI_CHECK_RET(rc, exit, "submit server to UCI fail: %d", rc);
   }
 
  exit:
@@ -220,31 +195,29 @@ commit_to_uci(struct model *model)
   struct uci_context *ctx = uci_alloc_context();
 
   rc = uci_load(ctx, "asterisk", &up);
-  if (rc != UCI_OK) {
-    fprintf(stderr, "No configuration (package): %s\n", "asterisk");
-    return rc;
-  }
+  UCI_CHECK_RET(rc, exit, "No configuration (package): %s\n", rc);
 
   rc = general_to_uci(ctx, model->general);
   if (UCI_OK != rc) {
-    fprintf(stderr, "general_to_uci error %d\n", rc);
+    WRN("general_to_uci error %d\n", rc);
   }
 
   rc = trunk_to_uci(ctx, model->trunk);
   if (UCI_OK != rc) {
-    fprintf(stderr, "trunk_to_uci error %d\n", rc);
+    WRN("trunk_to_uci error %d\n", rc);
   }
 
   rc = extensions_to_uci(ctx, model->extensions);
   if (UCI_OK != rc) {
-    fprintf(stderr, "trunk_to_uci error %d\n", rc);
+    WRN("trunk_to_uci error %d\n", rc);
   }
 
   rc = uci_commit(ctx, &up, false);
   if (UCI_OK != rc) {
-    fprintf(stderr, "trunk_to_uci error %d\n", rc);
+    WRN("uci_commit error %d\n", rc);
   }
 
+ exit:
   return rc;
 }
 
@@ -597,9 +570,9 @@ init_data(struct uci_context *ctx, struct model *model)
   int rc;
   struct extension *ext;
 
-  rc = uci_load(ctx, config_file, &package);
+  rc = uci_load(ctx, CONFIG_FILE, &package);
   if (rc != UCI_OK) {
-    fprintf(stderr, "No configuration (package): %s\n", config_file);
+    fprintf(stderr, "No configuration (package): %s\n", CONFIG_FILE);
     goto out;
   }
 
@@ -700,7 +673,7 @@ sync_datastores(sr_session_ctx_t *session, struct model *model, struct uci_conte
   empty = is_datastore_empty(session);
 
   /* running datastre non-empty */
-  if (empty && ((rc = sr_copy_config(session, module_name, SR_DS_RUNNING, SR_DS_STARTUP)) == SR_ERR_OK)) {
+  if (empty && ((rc = sr_copy_config(session, MODULE_NAME, SR_DS_RUNNING, SR_DS_STARTUP)) == SR_ERR_OK)) {
     fprintf(stderr, "copying\n" );
     return SR_ERR_OK; /* copy running to startup */
   } else if ((rc = init_data(uci_ctx, model)) != UCI_OK) {
@@ -721,13 +694,6 @@ sr_plugin_init_cb(sr_session_ctx_t *session, void **private_ctx)
   struct uci_context *uci_ctx = NULL;
   struct model *model = NULL;
   int rc = SR_ERR_OK;
-
-  /* Initialize module change handlers. */
-  rc = sr_module_change_subscribe(session, "sip", module_change_cb, NULL,
-                                  0, SR_SUBSCR_DEFAULT, &subscription);
-  if (SR_ERR_OK != rc) {
-      goto error;
-  }
 
   /* Initialize rpc handlers. */
   rc = init_rpc_cb(session, subscription);
@@ -759,7 +725,14 @@ sr_plugin_init_cb(sr_session_ctx_t *session, void **private_ctx)
   /* Commit values to datastore. */
   set_values(session, model->general, model->extensions, model->trunk);
 
-  uci_free_context(uci_ctx);
+  /* uci_free_context(uci_ctx); */
+
+  /* Initialize module change handlers. */
+  rc = sr_module_change_subscribe(session, "sip", module_change_cb, private_ctx,
+                                  0, SR_SUBSCR_DEFAULT, &subscription);
+  if (SR_ERR_OK != rc) {
+    goto error;
+  }
 
   *private_ctx = model;
   return SR_ERR_OK;
